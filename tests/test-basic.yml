@@ -1,0 +1,38 @@
+name: Test basic Shorebird install (Linux)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install Shorebird
+        id: setup
+        uses: .
+      - name: Assert shorebird binary is on PATH
+        run: |
+          echo "PATH: $PATH"
+          if ! command -v shorebird &>/dev/null; then
+            echo "FAIL: 'shorebird' command not found on PATH"
+            exit 1
+          fi
+          echo "PASS: shorebird found at $(command -v shorebird)"
+      - name: Assert shorebird bin directory was added to GITHUB_PATH
+        run: |
+          install_path="${HOME}/.shorebird"
+          expected_bin="${install_path}/bin"
+          echo "Expected bin dir: $expected_bin"
+          if [ ! -d "$expected_bin" ]; then
+            echo "FAIL: expected shorebird bin directory not found at $expected_bin"
+            exit 1
+          fi
+          echo "PASS: shorebird bin directory exists at $expected_bin"
+      - name: Assert shorebird binary exists on disk
+        run: |
+          shorebird_bin="${HOME}/.shorebird/bin/shorebird"
+          echo "Checking for binary at: $shorebird_bin"
+          if [ ! -f "$shorebird_bin" ]; then
+            echo "FAIL: shorebird binary not found at $shorebird_bin"
+            exit 1
+          fi
+          echo "PASS: shorebird binary found at $shorebird_bin"
