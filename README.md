@@ -1,14 +1,25 @@
-# shorebirdtech/setup-shorebird
+# Setup Shorebird
 
-Install the Shorebird CLI
+[![ci](https://github.com/shorebirdtech/setup-shorebird/actions/workflows/main.yaml/badge.svg)](https://github.com/shorebirdtech/setup-shorebird/actions/workflows/main.yaml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
 
-Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/shorebirdtech/setup-shorebird](https://github.com/shorebirdtech/setup-shorebird).
+Installs and sets up [Shorebird](https://github.com/shorebirdtech/shorebird) for use in GitHub Actions.
 
-## Versions
+## Features
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v0.1.2 | [`v0.1.2`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v0.1.2) | [`bd0dae4`](https://github.com/shorebirdtech/setup-shorebird/commit/bd0dae4f3c53ccc0ef6b0c9dbac974ffe7918d6d) |
+✅ Downloads the Shorebird CLI
+
+✅ Adds `shorebird` to the system path
+
+✅ Configures the specified version of Flutter
+
+## Usage
+
+```yaml
+steps:
+  - uses: shorebirdtech/setup-shorebird@v0
+  - run: shorebird --version
+```
 
 ## Privacy
 

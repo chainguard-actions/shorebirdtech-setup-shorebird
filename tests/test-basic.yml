@@ -1,0 +1,52 @@
+name: Test basic Shorebird installation
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup
+        uses: .
+      - name: Assert GITHUB_PATH was updated with shorebird bin
+        run: |
+          install_path="${HOME}/.shorebird/bin"
+          echo "HOME=$HOME"
+          echo "Expected install_path: $install_path"
+          echo "GITHUB_PATH=$GITHUB_PATH"
+          if [ -n "$GITHUB_PATH" ] && [ -f "$GITHUB_PATH" ]; then
+            echo "GITHUB_PATH file contents:"
+            cat "$GITHUB_PATH"
+            if grep -qF "$install_path" "$GITHUB_PATH"; then
+              echo "PASS: GITHUB_PATH file contains shorebird bin"
+              exit 0
+            fi
+          fi
+          # Fallback: check if shorebird is already on PATH (act may have applied GITHUB_PATH)
+          if echo "$PATH" | grep -qF ".shorebird/bin"; then
+            echo "PASS: shorebird bin found in PATH"
+            exit 0
+          fi
+          echo "FAIL: shorebird bin path not found in GITHUB_PATH file or PATH"
+          exit 1
+      - name: Assert shorebird bin directory exists
+        run: |
+          install_path="${HOME}/.shorebird/bin"
+          echo "Listing install directory:"
+          ls -la "$install_path" || true
+          if [ ! -d "$install_path" ]; then
+            echo "FAIL: shorebird bin directory not found at $install_path"
+            exit 1
+          fi
+          echo "PASS: shorebird bin directory exists"
+      - name: Assert shorebird binary is present
+        run: |
+          shorebird_bin="${HOME}/.shorebird/bin/shorebird"
+          echo "Checking for shorebird binary at: $shorebird_bin"
+          if [ ! -f "$shorebird_bin" ]; then
+            echo "Listing .shorebird/bin:"
+            ls -la "${HOME}/.shorebird/bin" || echo "(directory not found)"
+            echo "FAIL: shorebird binary not found at $shorebird_bin"
+            exit 1
+          fi
+          echo "PASS: shorebird binary found at $shorebird_bin"

@@ -1,0 +1,48 @@
+name: Test Shorebird installation with XDG_CONFIG_HOME
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      XDG_CONFIG_HOME: /tmp/custom-config
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: setup
+        uses: .
+      - name: Assert GITHUB_PATH was updated with XDG_CONFIG_HOME-based path
+        run: |
+          expected_path="${XDG_CONFIG_HOME}/shorebird/bin"
+          echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME"
+          echo "Expected path in GITHUB_PATH: $expected_path"
+          echo "GITHUB_PATH=$GITHUB_PATH"
+          if [ -n "$GITHUB_PATH" ] && [ -f "$GITHUB_PATH" ]; then
+            echo "GITHUB_PATH file contents:"
+            cat "$GITHUB_PATH"
+            if grep -qF "$expected_path" "$GITHUB_PATH"; then
+              echo "PASS: GITHUB_PATH file contains XDG-based shorebird bin path"
+              exit 0
+            fi
+          fi
+          # Fallback: check if the XDG-based path is in PATH (act may have applied GITHUB_PATH)
+          if echo "$PATH" | grep -qF "${XDG_CONFIG_HOME}/shorebird/bin"; then
+            echo "PASS: XDG-based shorebird bin found in PATH"
+            exit 0
+          fi
+          echo "FAIL: XDG-based shorebird bin path not found in GITHUB_PATH file or PATH"
+          exit 1
+      - name: Assert shorebird installation exists (XDG or default path)
+        run: |
+          xdg_path="${XDG_CONFIG_HOME}/shorebird/bin"
+          default_path="${HOME}/.shorebird/bin"
+          echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME"
+          echo "Checking XDG path: $xdg_path"
+          ls -la "$xdg_path" 2>/dev/null || true
+          echo "Checking default path: $default_path"
+          ls -la "$default_path" 2>/dev/null || true
+          if [ -d "$xdg_path" ] || [ -d "$default_path" ]; then
+            echo "PASS: shorebird bin directory exists (XDG or default path)"
+            exit 0
+          fi
+          echo "FAIL: shorebird bin directory not found at either XDG or default path"
+          exit 1
