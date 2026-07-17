@@ -1,0 +1,27 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions: {}
+
+jobs:
+  semantic-pull-request:
+    uses: VeryGoodOpenSource/very_good_workflows/.github/workflows/semantic_pull_request.yml@c2e27845f65775943bc310b3ab89e5c5432b8d4d # v1
+    permissions: {}
+
+  e2e:
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - uses: actions/checkout@f43a0e5ff2bd294095638e18286ca9a3d1956744 # v3
+      - uses: ./
+      - run: |
+          if [[ $(shorebird --version) =~ "Shorebird Engine • revision" ]]; then          
+            echo '✅ Shorebird CLI is installed!'
+          else
+            echo '❌ Shorebird CLI is not installed.'
+            exit 1
+          fi

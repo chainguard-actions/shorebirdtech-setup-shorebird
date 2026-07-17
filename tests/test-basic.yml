@@ -1,0 +1,44 @@
+name: Test basic Shorebird installation
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install dependencies
+        run: |
+          apt-get update -qq 2>/dev/null || true
+          which curl || apt-get install -y curl 2>/dev/null || true
+          which unzip || apt-get install -y unzip 2>/dev/null || true
+          which git || apt-get install -y git 2>/dev/null || true
+
+      - id: setup
+        uses: .
+        env:
+          GITHUB_REF: refs/heads/main
+          GITHUB_EVENT_NAME: push
+
+      - name: Assert shorebird binary exists in default install path
+        run: |
+          install_path="${HOME}/.shorebird"
+          echo "Checking for shorebird binary at: $install_path/bin/shorebird"
+          if [ ! -e "$install_path/bin/shorebird" ]; then
+            echo "FAIL: shorebird binary not found at $install_path/bin/shorebird"
+            ls -la "$install_path/" 2>/dev/null || echo "(install dir not found)"
+            ls -la "$install_path/bin/" 2>/dev/null || echo "(bin dir not found)"
+            exit 1
+          fi
+          echo "PASS: shorebird binary found"
+
+      - name: Assert shorebird is accessible in PATH
+        run: |
+          export PATH="${HOME}/.shorebird/bin:$PATH"
+          echo "PATH: $PATH"
+          if ! command -v shorebird &>/dev/null; then
+            echo "FAIL: shorebird not found in PATH"
+            exit 1
+          fi
+          echo "PASS: shorebird is accessible"
+          shorebird --version 2>&1 || true

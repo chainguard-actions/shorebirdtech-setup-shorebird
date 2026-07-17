@@ -1,0 +1,88 @@
+name: Test basic Shorebird installation
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create fake install script
+        run: |
+          cat > /tmp/fake-install-shorebird.sh << 'INSTALL_EOF'
+          #!/bin/sh
+          # Fake Shorebird installer
+          # Determine install path (mirrors the action's logic)
+          if [ -z "${XDG_CONFIG_HOME-}" ]; then
+            install_path="${HOME}/.shorebird"
+          else
+            install_path="${XDG_CONFIG_HOME}/shorebird"
+          fi
+          mkdir -p "${install_path}/bin"
+          # Create a fake shorebird binary
+          cat > "${install_path}/bin/shorebird" << 'EOF'
+          #!/bin/sh
+          echo "Shorebird CLI (fake) version 1.0.0"
+          EOF
+          chmod +x "${install_path}/bin/shorebird"
+          echo "Fake Shorebird installed to ${install_path}/bin"
+          INSTALL_EOF
+          chmod +x /tmp/fake-install-shorebird.sh
+
+      - name: Install fake curl on PATH
+        run: |
+          mkdir -p /tmp/fake-bin
+          cat > /tmp/fake-bin/curl << 'EOF'
+          #!/bin/sh
+          # Fake curl: serve the fake shorebird install script.
+          # Supports both "curl URL | bash" (stdout) and hardened "curl -o FILE URL" form.
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *shorebirdtech/install*|*install.sh*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-install-shorebird.sh > "$out"
+              else
+                cat /tmp/fake-install-shorebird.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          EOF
+          chmod +x /tmp/fake-bin/curl
+          echo "/tmp/fake-bin" >> $GITHUB_PATH
+
+      - name: Run setup-shorebird action
+        id: setup
+        uses: .
+
+      - name: Assert shorebird binary exists
+        run: |
+          if [ -z "${XDG_CONFIG_HOME-}" ]; then
+            install_path="${HOME}/.shorebird"
+          else
+            install_path="${XDG_CONFIG_HOME}/shorebird"
+          fi
+          echo "Checking for shorebird binary at: ${install_path}/bin/shorebird"
+          if [ ! -f "${install_path}/bin/shorebird" ]; then
+            echo "FAIL: shorebird binary not found at ${install_path}/bin/shorebird"
+            exit 1
+          fi
+          echo "PASS: shorebird binary exists"
+
+      - name: Assert shorebird is on PATH
+        run: |
+          echo "PATH: $PATH"
+          if ! command -v shorebird > /dev/null 2>&1; then
+            echo "FAIL: shorebird not found on PATH"
+            exit 1
+          fi
+          echo "PASS: shorebird is on PATH"
+          shorebird
