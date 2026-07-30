@@ -1,0 +1,80 @@
+name: Test basic setup-shorebird (no cache)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create fake install script
+        run: |
+          cat > /tmp/fake-shorebird-install.sh << 'INSTALL_SCRIPT'
+          #!/bin/sh
+          # Fake shorebird installer
+          INSTALL_DIR="${HOME}/.shorebird"
+          mkdir -p "${INSTALL_DIR}/bin"
+          cat > "${INSTALL_DIR}/bin/shorebird" << 'SHOREBIRD_BIN'
+          #!/bin/sh
+          echo "Shorebird CLI (fake) version 1.0.0"
+          SHOREBIRD_BIN
+          chmod +x "${INSTALL_DIR}/bin/shorebird"
+          echo "Fake Shorebird installed to ${INSTALL_DIR}/bin/shorebird"
+          INSTALL_SCRIPT
+          chmod +x /tmp/fake-shorebird-install.sh
+
+      - name: Create fake curl that serves the install script
+        run: |
+          mkdir -p /tmp/fake-bin
+          cat > /tmp/fake-bin/curl << 'FAKE_CURL'
+          #!/bin/sh
+          # Fake curl: serve canned payload for shorebird install URL
+          # Supports both "curl URL | sh" (stdout) and "curl -o FILE URL" (write to file)
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *shorebirdtech*|*shorebird*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-shorebird-install.sh > "$out"
+              else
+                cat /tmp/fake-shorebird-install.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          FAKE_CURL
+          chmod +x /tmp/fake-bin/curl
+          echo "/tmp/fake-bin" >> $GITHUB_PATH
+
+      - name: Run setup-shorebird action (no cache)
+        id: setup
+        uses: .
+        with:
+          cache: "false"
+
+      - name: Assert shorebird binary exists
+        run: |
+          SHOREBIRD_PATH="${HOME}/.shorebird/bin/shorebird"
+          echo "Checking for shorebird at: $SHOREBIRD_PATH"
+          if [ ! -f "$SHOREBIRD_PATH" ]; then
+            echo "FAIL: shorebird binary not found at $SHOREBIRD_PATH"
+            exit 1
+          fi
+          echo "PASS: shorebird binary exists"
+
+      - name: Assert shorebird is on PATH
+        run: |
+          echo "PATH: $PATH"
+          if ! command -v shorebird > /dev/null 2>&1; then
+            echo "FAIL: shorebird not found on PATH"
+            exit 1
+          fi
+          echo "PASS: shorebird is on PATH"
+          shorebird --version || shorebird version || echo "(version command ran)"
