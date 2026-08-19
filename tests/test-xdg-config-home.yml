@@ -1,0 +1,97 @@
+name: Test Shorebird install with XDG_CONFIG_HOME
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      XDG_CONFIG_HOME: /tmp/xdg-config
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create fake install script and mock curl
+        run: |
+          # Write a fake install.sh that creates a stub shorebird binary
+          # It must respect XDG_CONFIG_HOME if set
+          cat > /tmp/fake-install-shorebird.sh << 'INSTALL_EOF'
+          #!/bin/sh
+          # Fake Shorebird installer — respects XDG_CONFIG_HOME
+          if [ -n "${XDG_CONFIG_HOME-}" ]; then
+            install_path="${XDG_CONFIG_HOME}/shorebird"
+          else
+            install_path="${HOME}/.shorebird"
+          fi
+          mkdir -p "${install_path}/bin"
+          cat > "${install_path}/bin/shorebird" << 'BIN_EOF'
+          #!/bin/sh
+          echo "Shorebird CLI (fake) version 1.0.0"
+          BIN_EOF
+          chmod +x "${install_path}/bin/shorebird"
+          echo "Fake Shorebird installed to ${install_path}/bin"
+          INSTALL_EOF
+          chmod +x /tmp/fake-install-shorebird.sh
+
+          # Create a fake curl that serves the fake install script
+          mkdir -p /tmp/fake-bin
+          cat > /tmp/fake-bin/curl << 'CURL_EOF'
+          #!/bin/sh
+          # Fake curl: serve canned install script, supporting both pipe and -o forms
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *shorebirdtech*install*|*shorebird*install*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-install-shorebird.sh > "$out"
+              else
+                cat /tmp/fake-install-shorebird.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          CURL_EOF
+          chmod +x /tmp/fake-bin/curl
+
+          # Prepend fake-bin to PATH so our curl is found first
+          echo "/tmp/fake-bin" >> "$GITHUB_PATH"
+
+      - name: Run setup-shorebird action
+        uses: .
+
+      - name: Assert shorebird binary is on PATH
+        run: |
+          echo "PATH: $PATH"
+          if ! command -v shorebird > /dev/null 2>&1; then
+            echo "FAIL: shorebird not found on PATH"
+            exit 1
+          fi
+          echo "PASS: shorebird found at $(command -v shorebird)"
+
+      - name: Assert shorebird installed under XDG_CONFIG_HOME
+        run: |
+          EXPECTED_DIR="${XDG_CONFIG_HOME}/shorebird/bin"
+          echo "Expected install dir: $EXPECTED_DIR"
+          if [ ! -d "$EXPECTED_DIR" ]; then
+            echo "FAIL: expected XDG install directory $EXPECTED_DIR does not exist"
+            exit 1
+          fi
+          echo "PASS: install directory exists at $EXPECTED_DIR"
+
+      - name: Assert shorebird NOT installed under HOME/.shorebird when XDG set
+        run: |
+          DEFAULT_DIR="${HOME}/.shorebird/bin"
+          echo "Default dir (should not be used): $DEFAULT_DIR"
+          # The action should use XDG_CONFIG_HOME path, not HOME/.shorebird
+          SHOREBIRD_BIN=$(command -v shorebird)
+          echo "shorebird found at: $SHOREBIRD_BIN"
+          if echo "$SHOREBIRD_BIN" | grep -q "${HOME}/.shorebird"; then
+            echo "FAIL: shorebird was installed under HOME/.shorebird instead of XDG_CONFIG_HOME"
+            exit 1
+          fi
+          echo "PASS: shorebird is not under HOME/.shorebird (XDG_CONFIG_HOME was respected)"

@@ -26,9 +26,10 @@ runs:
     - name: "\U0001F426 Install Shorebird (macOS / Linux)"
       if: runner.os != 'Windows'
       run: |
-        curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh -sSf -o /tmp/shorebird_install.sh
-        bash /tmp/shorebird_install.sh --force
-        rm -f /tmp/shorebird_install.sh
+        INSTALL_SCRIPT="$(mktemp)"
+        curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh -sSf -o "$INSTALL_SCRIPT"
+        bash "$INSTALL_SCRIPT" --force
+        rm -f "$INSTALL_SCRIPT"
         install_path=$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.shorebird" || printf %s "${XDG_CONFIG_HOME}/shorebird")
         safe_install_path=$(printf '%s' "$install_path/bin" | tr -d '\n\r')
         echo "$safe_install_path" >> "$GITHUB_PATH"
@@ -38,12 +39,11 @@ runs:
       if: runner.os == 'Windows'
       run: |
         Set-ExecutionPolicy RemoteSigned -scope CurrentUser # Needed to execute remote scripts
-        $installerPath = Join-Path $env:TEMP "shorebird_install.ps1"
-        Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/shorebirdtech/install/main/install.ps1' -OutFile $installerPath
-        & $installerPath
-        Remove-Item -Force $installerPath
+        $installScript = [IO.Path]::GetTempFileName() + ".ps1"
+        Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/shorebirdtech/install/main/install.ps1' -OutFile $installScript
+        & $installScript
+        Remove-Item $installScript -ErrorAction SilentlyContinue
         $installDirectory = [IO.Path]::Combine($home, ".shorebird")
-        $safeInstallBin = ("$installDirectory\bin" -replace "`r","" -replace "`n","")
-        Add-Content $env:GITHUB_PATH $safeInstallBin
-        Write-Output "added $safeInstallBin to GITHUB_PATH"
+        Add-Content $env:GITHUB_PATH "$installDirectory\bin"
+        Write-Output "added $installDirectory\bin to GITHUB_PATH"
       shell: pwsh

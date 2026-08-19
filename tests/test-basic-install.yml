@@ -1,0 +1,87 @@
+name: Test basic Shorebird install (Linux)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Create fake install script and mock curl
+        run: |
+          # Write a fake install.sh that creates a stub shorebird binary
+          cat > /tmp/fake-install-shorebird.sh << 'INSTALL_EOF'
+          #!/bin/sh
+          # Fake Shorebird installer
+          install_path="${HOME}/.shorebird"
+          mkdir -p "${install_path}/bin"
+          cat > "${install_path}/bin/shorebird" << 'BIN_EOF'
+          #!/bin/sh
+          echo "Shorebird CLI (fake) version 1.0.0"
+          BIN_EOF
+          chmod +x "${install_path}/bin/shorebird"
+          echo "Fake Shorebird installed to ${install_path}/bin"
+          INSTALL_EOF
+          chmod +x /tmp/fake-install-shorebird.sh
+
+          # Create a fake curl that serves the fake install script
+          mkdir -p /tmp/fake-bin
+          cat > /tmp/fake-bin/curl << 'CURL_EOF'
+          #!/bin/sh
+          # Fake curl: serve canned install script, supporting both pipe and -o forms
+          out=""
+          prev=""
+          for arg in "$@"; do
+            case "$prev" in
+              -o|--output) out="$arg" ;;
+            esac
+            prev="$arg"
+          done
+          case "$*" in
+            *shorebirdtech*install*|*shorebird*install*)
+              if [ -n "$out" ]; then
+                cat /tmp/fake-install-shorebird.sh > "$out"
+              else
+                cat /tmp/fake-install-shorebird.sh
+              fi
+              exit 0
+              ;;
+          esac
+          exec /usr/bin/curl "$@"
+          CURL_EOF
+          chmod +x /tmp/fake-bin/curl
+
+          # Prepend fake-bin to PATH so our curl is found first
+          echo "/tmp/fake-bin" >> "$GITHUB_PATH"
+
+      - name: Run setup-shorebird action
+        uses: .
+
+      - name: Assert shorebird binary is on PATH
+        run: |
+          echo "PATH: $PATH"
+          if ! command -v shorebird > /dev/null 2>&1; then
+            echo "FAIL: shorebird not found on PATH"
+            exit 1
+          fi
+          echo "PASS: shorebird found at $(command -v shorebird)"
+
+      - name: Assert shorebird binary is executable
+        run: |
+          SHOREBIRD_PATH=$(command -v shorebird)
+          echo "shorebird path: $SHOREBIRD_PATH"
+          if [ ! -x "$SHOREBIRD_PATH" ]; then
+            echo "FAIL: shorebird binary is not executable"
+            exit 1
+          fi
+          echo "PASS: shorebird binary is executable"
+
+      - name: Assert shorebird install dir is in HOME
+        run: |
+          EXPECTED_DIR="${HOME}/.shorebird/bin"
+          echo "Expected install dir: $EXPECTED_DIR"
+          if [ ! -d "$EXPECTED_DIR" ]; then
+            echo "FAIL: expected install directory $EXPECTED_DIR does not exist"
+            exit 1
+          fi
+          echo "PASS: install directory exists at $EXPECTED_DIR"
