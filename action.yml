@@ -34,7 +34,7 @@ runs:
       run: |
         install_path=$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.shorebird" || printf %s "${XDG_CONFIG_HOME}/shorebird")
         safe_install_path=$(printf '%s' "$install_path" | tr -d '\n\r')
-        echo "install_path=$safe_install_path" >> "$GITHUB_ENV"
+        echo "install_path=$safe_install_path" >> $GITHUB_ENV
       shell: bash
     - name: Determine Install Path (Windows)
       if: ${{ runner.os == 'Windows' }}
@@ -47,43 +47,44 @@ runs:
     - name: "\U0001F4BE Configure Shorebird Cache"
       if: ${{ inputs.cache == 'true' }}
       id: cache-shorebird
-      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      uses: chainguard-actions/actions-cache@1a492a110f951652a0d2d3327bc20ee36867788e # v4
       with:
         path: ${{ env.install_path }}
         key: shorebird-cache-key-${{ runner.os }}-${{ runner.arch }}
     - name: "\U0001F426 Install Shorebird (MacOS / Linux)"
       if: ${{ steps.cache-shorebird.outputs.cache-hit != 'true' && runner.os != 'Windows' }}
       run: |
-        curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh -sSf -o /tmp/shorebird_install.sh
-        bash /tmp/shorebird_install.sh --force
-        rm -f /tmp/shorebird_install.sh
+        INSTALL_SCRIPT=$(mktemp)
+        curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh -sSf -o "$INSTALL_SCRIPT"
+        bash "$INSTALL_SCRIPT" --force
+        rm -f "$INSTALL_SCRIPT"
       shell: bash
     - name: "\U0001F426 Install Shorebird (Windows)"
       if: ${{ steps.cache-shorebird.outputs.cache-hit != 'true' && runner.os == 'Windows' }}
       run: |
         Set-ExecutionPolicy RemoteSigned -scope CurrentUser # Needed to execute remote scripts
-        $scriptPath = Join-Path $env:TEMP "shorebird_install.ps1"
-        Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/shorebirdtech/install/main/install.ps1' -OutFile $scriptPath
-        & $scriptPath
-        Remove-Item $scriptPath -Force
+        $install_script = Join-Path $env:TEMP "shorebird_install_$(New-Guid).ps1"
+        Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/shorebirdtech/install/main/install.ps1' -OutFile $install_script
+        & $install_script
+        Remove-Item $install_script -ErrorAction SilentlyContinue
       shell: pwsh
     - name: ➕ Add Shorebird to Path (MacOS / Linux)
       if: ${{ runner.os != 'Windows' }}
       env:
         INSTALL_PATH: ${{ env.install_path }}
       run: |
-        safe_install_path=$(printf '%s' "$INSTALL_PATH" | tr -d '\n\r')
-        printf '%s/bin\n' "$safe_install_path" >> "$GITHUB_PATH"
-        echo "added $safe_install_path/bin to GITHUB_PATH"
+        safe_path=$(printf '%s' "$INSTALL_PATH" | tr -d '\n\r')
+        printf '%s/bin\n' "$safe_path" >> "$GITHUB_PATH"
+        echo "added $safe_path/bin to GITHUB_PATH"
       shell: bash
     - name: ➕ Add Shorebird to Path (Windows)
       if: ${{ runner.os == 'Windows' }}
       env:
         INSTALL_PATH: ${{ env.install_path }}
       run: |
-        $safe_install_path = $env:INSTALL_PATH -replace "`r|`n", ""
-        Add-Content $env:GITHUB_PATH "$safe_install_path\bin"
-        Write-Output "added $safe_install_path\bin to GITHUB_PATH"
+        $safe_path = $env:INSTALL_PATH -replace "`r|`n", ""
+        Add-Content $env:GITHUB_PATH "$safe_path\bin"
+        Write-Output "added $safe_path\bin to GITHUB_PATH"
       shell: pwsh
     - name: "\U0001F344 Ensure Shorebird is Up-to-Date (MacOS / Linux)"
       if: ${{ steps.cache-shorebird.outputs.cache-hit == 'true' && runner.os != 'Windows' }}
