@@ -45,7 +45,7 @@ runs:
     - name: "\U0001F4BE Configure Shorebird Cache"
       if: ${{ inputs.cache == 'true' }}
       id: cache-shorebird
-      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      uses: chainguard-actions/actions-cache@244dfed44d8c4e917b332280fb2c1063eda3d9be # v6.1.0
       with:
         path: ${{ steps.install-path.outputs.path || steps.install-path-windows.outputs.path }}
         key: shorebird-cache-key-${{ runner.os }}-${{ runner.arch }}
