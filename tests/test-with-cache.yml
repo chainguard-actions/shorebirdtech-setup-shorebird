@@ -1,0 +1,32 @@
+name: Test Shorebird install with cache enabled
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Shorebird (cache enabled)
+        id: setup
+        uses: .
+        with:
+          cache: "true"
+
+      - name: Assert shorebird is on PATH
+        run: |
+          echo "PATH: $PATH"
+          if ! command -v shorebird &>/dev/null; then
+            echo "FAIL: shorebird not found on PATH"
+            exit 1
+          fi
+          echo "PASS: shorebird found at $(command -v shorebird)"
+
+      - name: Assert shorebird version runs
+        run: |
+          shorebird --version
+          if [ $? -ne 0 ]; then
+            echo "FAIL: shorebird --version exited with non-zero"
+            exit 1
+          fi
+          echo "PASS: shorebird --version succeeded"
