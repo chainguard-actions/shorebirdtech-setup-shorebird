@@ -1,0 +1,36 @@
+name: Test Shorebird install path with XDG_CONFIG_HOME set
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      XDG_CONFIG_HOME: /tmp/xdg-config-test
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Shorebird (latest, no cache, XDG_CONFIG_HOME set)
+        id: setup
+        uses: .
+        with:
+          cache: "false"
+
+      - name: Assert install path respects XDG_CONFIG_HOME
+        run: |
+          expected_path="${XDG_CONFIG_HOME}/shorebird"
+          echo "Checking that shorebird is installed at: $expected_path"
+          if [ ! -d "$expected_path" ]; then
+            echo "FAIL: expected install directory not found at $expected_path"
+            echo "XDG_CONFIG_HOME=$XDG_CONFIG_HOME"
+            exit 1
+          fi
+          echo "PASS: install directory exists at $expected_path"
+
+      - name: Assert shorebird is on PATH and works
+        run: |
+          echo "Checking shorebird on PATH..."
+          if ! command -v shorebird >/dev/null 2>&1; then
+            echo "FAIL: shorebird not found on PATH"
+            exit 1
+          fi
+          echo "PASS: shorebird found at $(command -v shorebird)"
