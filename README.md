@@ -15,6 +15,7 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 | v1.0.2 | [`v1.0.2`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.0.2) | [`64b5b47`](https://github.com/shorebirdtech/setup-shorebird/commit/64b5b47903fb38f95e7843bced304ebc4dd46c5e) |
 | v1.3.0 | [`v1.3.0`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.3.0) | [`faa6ebd`](https://github.com/shorebirdtech/setup-shorebird/commit/faa6ebdbbeddfd32bd31f421d6582a77e8fa8ed2) |
 | v1.4.0 | [`v1.4.0`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.4.0) | [`a4a382c`](https://github.com/shorebirdtech/setup-shorebird/commit/a4a382caff29352d974d06d64086f3a9bf92a0e7) |
+| v1.4.1 | [`v1.4.1`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.4.1) | [`8b1059d`](https://github.com/shorebirdtech/setup-shorebird/commit/8b1059ddb56a926f0146edf4133cc647775c162f) |
 
 ## Privacy
 
