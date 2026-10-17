@@ -1,0 +1,56 @@
+name: Test Shorebird installation with pinned version
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Use a known stable pinned version for testing
+      - id: action
+        name: Install Shorebird (pinned version)
+        uses: .
+        with:
+          cache: "false"
+          shorebird-version: "1.6.125"
+
+      - name: Assert shorebird is on PATH
+        run: |
+          echo "Checking shorebird is available on PATH..."
+          if ! command -v shorebird >/dev/null 2>&1; then
+            echo "FAIL: shorebird not found on PATH"
+            exit 1
+          fi
+          echo "PASS: shorebird found at $(command -v shorebird)"
+
+      - name: Assert install path exists
+        run: |
+          install_path="${HOME}/.shorebird"
+          echo "Checking install path: $install_path"
+          if [ ! -d "$install_path" ]; then
+            echo "FAIL: install path $install_path does not exist"
+            exit 1
+          fi
+          echo "PASS: install path exists"
+
+      - name: Assert shorebird bin exists
+        run: |
+          bin_path="${HOME}/.shorebird/bin/shorebird"
+          echo "Checking shorebird binary: $bin_path"
+          if [ ! -f "$bin_path" ]; then
+            echo "FAIL: shorebird binary not found at $bin_path"
+            exit 1
+          fi
+          echo "PASS: shorebird binary exists at $bin_path"
+
+      - name: Assert shorebird --version output
+        run: |
+          echo "Running shorebird --version..."
+          output=$(shorebird --version 2>&1 || true)
+          echo "output: $output"
+          if [ -z "$output" ]; then
+            echo "FAIL: shorebird --version produced no output"
+            exit 1
+          fi
+          echo "PASS: shorebird --version produced output"
