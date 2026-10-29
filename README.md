@@ -6,16 +6,16 @@ Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at
 
 ## Versions
 
-| Version | Tag | Upstream commit |
-|---------|-----|-----------------|
-| v0.1.1 | [`v0.1.1`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v0.1.1) | [`3775af7`](https://github.com/shorebirdtech/setup-shorebird/commit/3775af778d667edb6d3637c4f01cc6ec42c4082e) |
-| v0.1.2 | [`v0.1.2`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v0.1.2) | [`bd0dae4`](https://github.com/shorebirdtech/setup-shorebird/commit/bd0dae4f3c53ccc0ef6b0c9dbac974ffe7918d6d) |
-| v1.0.0 | [`v1.0.0`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.0.0) | [`b75a640`](https://github.com/shorebirdtech/setup-shorebird/commit/b75a640df526ab7b33b8623e74e3720ce60d4c3d) |
-| v1.0.1 | [`v1.0.1`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.0.1) | [`4dd9d7d`](https://github.com/shorebirdtech/setup-shorebird/commit/4dd9d7dc2d7930bfeadb053b6e94b5110779d1e5) |
-| v1.0.2 | [`v1.0.2`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.0.2) | [`64b5b47`](https://github.com/shorebirdtech/setup-shorebird/commit/64b5b47903fb38f95e7843bced304ebc4dd46c5e) |
-| v1.3.0 | [`v1.3.0`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.3.0) | [`faa6ebd`](https://github.com/shorebirdtech/setup-shorebird/commit/faa6ebdbbeddfd32bd31f421d6582a77e8fa8ed2) |
-| v1.4.0 | [`v1.4.0`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.4.0) | [`a4a382c`](https://github.com/shorebirdtech/setup-shorebird/commit/a4a382caff29352d974d06d64086f3a9bf92a0e7) |
-| v1.4.1 | [`v1.4.1`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.4.1) | [`8b1059d`](https://github.com/shorebirdtech/setup-shorebird/commit/8b1059ddb56a926f0146edf4133cc647775c162f) |
+| Version | Tag | Upstream commit | Hardening report |
+|---------|-----|-----------------|------------------|
+| v0.1.1 | [`v0.1.1`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v0.1.1) | [`3775af7`](https://github.com/shorebirdtech/setup-shorebird/commit/3775af778d667edb6d3637c4f01cc6ec42c4082e) | [`HARDENING.md`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/blob/v0.1.1/HARDENING.md) |
+| v0.1.2 | [`v0.1.2`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v0.1.2) | [`bd0dae4`](https://github.com/shorebirdtech/setup-shorebird/commit/bd0dae4f3c53ccc0ef6b0c9dbac974ffe7918d6d) | [`HARDENING.md`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/blob/v0.1.2/HARDENING.md) |
+| v1.0.0 | [`v1.0.0`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.0.0) | [`b75a640`](https://github.com/shorebirdtech/setup-shorebird/commit/b75a640df526ab7b33b8623e74e3720ce60d4c3d) | [`HARDENING.md`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/blob/v1.0.0/HARDENING.md) |
+| v1.0.1 | [`v1.0.1`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.0.1) | [`4dd9d7d`](https://github.com/shorebirdtech/setup-shorebird/commit/4dd9d7dc2d7930bfeadb053b6e94b5110779d1e5) | [`HARDENING.md`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/blob/v1.0.1/HARDENING.md) |
+| v1.0.2 | [`v1.0.2`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.0.2) | [`64b5b47`](https://github.com/shorebirdtech/setup-shorebird/commit/64b5b47903fb38f95e7843bced304ebc4dd46c5e) | [`HARDENING.md`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/blob/v1.0.2/HARDENING.md) |
+| v1.3.0 | [`v1.3.0`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.3.0) | [`faa6ebd`](https://github.com/shorebirdtech/setup-shorebird/commit/faa6ebdbbeddfd32bd31f421d6582a77e8fa8ed2) | [`HARDENING.md`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/blob/v1.3.0/HARDENING.md) |
+| v1.4.0 | [`v1.4.0`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.4.0) | [`a4a382c`](https://github.com/shorebirdtech/setup-shorebird/commit/a4a382caff29352d974d06d64086f3a9bf92a0e7) | [`HARDENING.md`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/blob/v1.4.0/HARDENING.md) |
+| v1.4.1 | [`v1.4.1`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/tree/v1.4.1) | [`8b1059d`](https://github.com/shorebirdtech/setup-shorebird/commit/8b1059ddb56a926f0146edf4133cc647775c162f) | [`HARDENING.md`](https://github.com/chainguard-actions/shorebirdtech-setup-shorebird/blob/v1.4.1/HARDENING.md) |
 
 ## Privacy
 
