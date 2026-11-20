@@ -1,8 +1,10 @@
 name: Setup Shorebird
 description: Install the Shorebird CLI
+
 branding:
   icon: check-circle
   color: yellow
+
 inputs:
   cache:
     description: "Cache the Shorebird installation and artifacts. Default: false"
@@ -10,9 +12,15 @@ inputs:
     default: "false"
   shorebird-version:
     description: >-
-      Not recommended. Pins the Shorebird CLI release to install (the version `shorebird --version` prints, e.g. 1.6.125; not a Flutter version). Defaults to the latest stable release. Shorebird's servers stop accepting old CLI versions over time, so a pinned version will eventually break. To build with a specific Flutter version, pass --flutter-version to `shorebird release` instead.
+      Not recommended. Pins the Shorebird CLI release to install (the version
+      `shorebird --version` prints, e.g. 1.6.125; not a Flutter version).
+      Defaults to the latest stable release. Shorebird's servers stop
+      accepting old CLI versions over time, so a pinned version will
+      eventually break. To build with a specific Flutter version, pass
+      --flutter-version to `shorebird release` instead.
     required: false
     default: ""
+
 runs:
   using: composite
   steps:
@@ -38,43 +46,54 @@ runs:
       id: install-path
       run: |
         install_path=$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.shorebird" || printf %s "${XDG_CONFIG_HOME}/shorebird")
-        echo "path=$install_path" >> "$GITHUB_OUTPUT"
+        safe_path=$(printf '%s' "$install_path" | tr -d '\n\r')
+        echo "path=$safe_path" >> "$GITHUB_OUTPUT"
       shell: bash
+
     - name: Determine Install Path (Windows)
       if: ${{ runner.os == 'Windows' }}
       id: install-path-windows
       run: |
         $install_path = [IO.Path]::Combine($home, ".shorebird")
-        Write-Output "path=$install_path" >> $env:GITHUB_OUTPUT
+        $safe_path = $install_path -replace "[`r`n]", ""
+        Write-Output "path=$safe_path" >> $env:GITHUB_OUTPUT
       shell: pwsh
-    - name: "\U0001F4BE Configure Shorebird Cache"
+
+    - name: 💾 Configure Shorebird Cache
       if: ${{ inputs.cache == 'true' }}
       id: cache-shorebird
       uses: chainguard-actions/actions-cache@46c2783c2418d3de33490be27a0d86c6268bc4fd # v6.1.0
       with:
         path: ${{ steps.install-path.outputs.path || steps.install-path-windows.outputs.path }}
         key: shorebird-cache-key-${{ runner.os }}-${{ runner.arch }}${{ inputs.shorebird-version && format('-{0}', inputs.shorebird-version) || '' }}
-    - name: "\U0001F426 Install Shorebird (MacOS / Linux)"
+
+    - name: 🐦 Install Shorebird (MacOS / Linux)
       if: ${{ steps.cache-shorebird.outputs.cache-hit != 'true' && inputs.shorebird-version == '' && runner.os != 'Windows' }}
       run: |
+        # Installer pinned to an immutable commit of shorebirdtech/install (main).
         INSTALL_SCRIPT="$(mktemp)"
-        curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh -sSf -o "$INSTALL_SCRIPT"
+        curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/00ba4737444b1a63477860c8859e5a22768e8db9/install.sh -sSf -o "$INSTALL_SCRIPT"
+        if [ ! -s "$INSTALL_SCRIPT" ]; then echo "Failed to download Shorebird installer" >&2; exit 1; fi
         bash "$INSTALL_SCRIPT" --force
         rm -f "$INSTALL_SCRIPT"
       shell: bash
-    - name: "\U0001F426 Install Shorebird (Windows)"
+
+    - name: 🐦 Install Shorebird (Windows)
       if: ${{ steps.cache-shorebird.outputs.cache-hit != 'true' && inputs.shorebird-version == '' && runner.os == 'Windows' }}
       run: |
         Set-ExecutionPolicy RemoteSigned -scope CurrentUser # Needed to execute remote scripts
+        # Installer pinned to an immutable commit of shorebirdtech/install (main).
         $install_script = [IO.Path]::Combine([IO.Path]::GetTempPath(), [IO.Path]::GetRandomFileName() + ".ps1")
-        Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/shorebirdtech/install/main/install.ps1' -OutFile $install_script
+        Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/shorebirdtech/install/00ba4737444b1a63477860c8859e5a22768e8db9/install.ps1' -OutFile $install_script
+        if (-not (Test-Path $install_script) -or (Get-Item $install_script).Length -eq 0) { throw "Failed to download Shorebird installer" }
         & $install_script
         Remove-Item $install_script -ErrorAction SilentlyContinue
       shell: pwsh
+
     # A pinned version skips the installer, which would first download the
     # latest CLI and its Flutter. Clone the CLI at the release tag instead,
     # as the installer does for the stable branch.
-    - name: "\U0001F4CC Install Pinned Shorebird (MacOS / Linux)"
+    - name: 📌 Install Pinned Shorebird (MacOS / Linux)
       if: ${{ steps.cache-shorebird.outputs.cache-hit != 'true' && inputs.shorebird-version != '' && runner.os != 'Windows' }}
       env:
         INSTALL_PATH: ${{ steps.install-path.outputs.path }}
@@ -84,7 +103,8 @@ runs:
         git clone --quiet -c advice.detachedHead=false --branch "v${VERSION#v}" https://github.com/shorebirdtech/shorebird.git "$INSTALL_PATH"
         "$INSTALL_PATH/bin/shorebird" --version
       shell: bash
-    - name: "\U0001F4CC Install Pinned Shorebird (Windows)"
+
+    - name: 📌 Install Pinned Shorebird (Windows)
       if: ${{ steps.cache-shorebird.outputs.cache-hit != 'true' && inputs.shorebird-version != '' && runner.os == 'Windows' }}
       env:
         INSTALL_PATH: ${{ steps.install-path-windows.outputs.path }}
@@ -96,31 +116,35 @@ runs:
         if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
         & (Join-Path $env:INSTALL_PATH "bin\shorebird.ps1") --version
       shell: pwsh
+
     # Adding the CLI to PATH is this action's job, so the GITHUB_PATH writes
     # below are intentional.
     - name: ➕ Add Shorebird to Path (MacOS / Linux)
       if: ${{ runner.os != 'Windows' }}
       env:
         INSTALL_PATH: ${{ steps.install-path.outputs.path }}
-      run: |
-        safe=$(printf '%s' "$INSTALL_PATH" | tr -d '\n\r')
-        echo "${safe}/bin" >> "$GITHUB_PATH"
-        echo "added ${safe}/bin to GITHUB_PATH"
+      run: | # zizmor: ignore[github-env]
+        safe_path=$(printf '%s' "$INSTALL_PATH" | tr -d '\n\r')
+        echo "$safe_path/bin" >> "$GITHUB_PATH"
+        echo "added $INSTALL_PATH/bin to GITHUB_PATH"
       shell: bash
+
     - name: ➕ Add Shorebird to Path (Windows)
       if: ${{ runner.os == 'Windows' }}
       env:
         INSTALL_PATH: ${{ steps.install-path-windows.outputs.path }}
-      run: |
-        $safe = $env:INSTALL_PATH -replace '[\r\n]', ''
-        Add-Content $env:GITHUB_PATH "$safe\bin"
-        Write-Output "added $safe\bin to GITHUB_PATH"
+      run: | # zizmor: ignore[github-env]
+        $safe_path = $env:INSTALL_PATH -replace "[`r`n]", ""
+        Add-Content $env:GITHUB_PATH "$safe_path\bin"
+        Write-Output "added $env:INSTALL_PATH\bin to GITHUB_PATH"
       shell: pwsh
-    - name: "\U0001F344 Ensure Shorebird is Up-to-Date (MacOS / Linux)"
+
+    - name: 🍄 Ensure Shorebird is Up-to-Date (MacOS / Linux)
       if: ${{ steps.cache-shorebird.outputs.cache-hit == 'true' && inputs.shorebird-version == '' && runner.os != 'Windows' }}
       run: shorebird upgrade
       shell: bash
-    - name: "\U0001F344 Ensure Shorebird is Up-to-Date (Windows)"
+
+    - name: 🍄 Ensure Shorebird is Up-to-Date (Windows)
       if: ${{ steps.cache-shorebird.outputs.cache-hit == 'true' && inputs.shorebird-version == '' && runner.os == 'Windows' }}
       run: shorebird upgrade
       shell: pwsh
