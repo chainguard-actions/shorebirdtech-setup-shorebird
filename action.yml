@@ -46,7 +46,8 @@ runs:
       id: install-path
       run: |
         install_path=$([ -z "${XDG_CONFIG_HOME-}" ] && printf %s "${HOME}/.shorebird" || printf %s "${XDG_CONFIG_HOME}/shorebird")
-        echo "path=$install_path" >> "$GITHUB_OUTPUT"
+        safe_path=$(printf '%s' "$install_path" | tr -d '\n\r')
+        echo "path=$safe_path" >> "$GITHUB_OUTPUT"
       shell: bash
 
     - name: Determine Install Path (Windows)
@@ -54,7 +55,8 @@ runs:
       id: install-path-windows
       run: |
         $install_path = [IO.Path]::Combine($home, ".shorebird")
-        Write-Output "path=$install_path" >> $env:GITHUB_OUTPUT
+        $safe_path = $install_path -replace "`r|`n", ""
+        Write-Output "path=$safe_path" >> $env:GITHUB_OUTPUT
       shell: pwsh
 
     # Without a pinned version the installer takes the latest stable release,
@@ -84,7 +86,7 @@ runs:
       if: ${{ steps.cache-shorebird.outputs.cache-hit != 'true' && inputs.shorebird-version == '' && runner.os != 'Windows' }}
       run: |
         INSTALL_SCRIPT="$(mktemp)"
-        curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/main/install.sh -sSf -o "$INSTALL_SCRIPT"
+        curl --proto '=https' --tlsv1.2 https://raw.githubusercontent.com/shorebirdtech/install/00ba4737444b1a63477860c8859e5a22768e8db9/install.sh -sSf -o "$INSTALL_SCRIPT"
         bash "$INSTALL_SCRIPT" --force
         rm -f "$INSTALL_SCRIPT"
       shell: bash
@@ -94,7 +96,8 @@ runs:
       run: |
         Set-ExecutionPolicy RemoteSigned -scope CurrentUser # Needed to execute remote scripts
         $install_script = [IO.Path]::Combine([IO.Path]::GetTempPath(), [IO.Path]::GetRandomFileName() + ".ps1")
-        Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/shorebirdtech/install/main/install.ps1' -OutFile $install_script
+        Invoke-WebRequest -UseBasicParsing 'https://raw.githubusercontent.com/shorebirdtech/install/00ba4737444b1a63477860c8859e5a22768e8db9/install.ps1' -OutFile $install_script
+        Unblock-File -Path $install_script
         & $install_script
         Remove-Item $install_script -ErrorAction SilentlyContinue
       shell: pwsh
